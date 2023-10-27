@@ -1,7 +1,7 @@
 # formform
 테라폼폼으로 한달만에 100크래딧 탕진하기
 
-- tarraform 을 이용하여 인스턴스 관리
+- terraform 을 이용하여 인스턴스 관리
 - k8s cluster 한땀한땀 구축
   - multiple region ec2 instance 활용
   - multiple cluster 구축
