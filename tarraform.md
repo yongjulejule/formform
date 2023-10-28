@@ -132,4 +132,22 @@ resource "aws_instance" "ec2_us_east_1" {
   }
 }
 ```
-이것도 실패했다. AMI (Amazon machine image) 라는 값이 있는데, 얘가 regional 하게 unique 란다. 얼탱.
+이것도 실패했다. AMI (Amazon machine image) 라는 값이 있는데, 얘가 regional 하게 unique 란다. 얼탱
+
+cdk 는 될거 같은데 쩝... terraform 도 그리 아름답진 않은듯
+
+- 각 모듈별로 tf 파일을 나눠서 multiple-region deploy
+- makefile 같은거 쓰는건 어떨지? -> 리소스 관리할때 그리 아름답지 않을 것 같음.  
+
+```terraform
+├── main.tf
+├── modules
+│   └── ec2_instance
+│       ├── main.tf
+│       ├── outputs.tf
+│       └── variables.tf
+└── terraform.tfstate
+```
+
+- 이런식으로 하면 된다. 
+

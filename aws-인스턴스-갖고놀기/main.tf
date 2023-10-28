@@ -1,40 +1,32 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
-    }
-  }
-
-  required_version = ">= 1.2.0"
+variable "regions" {
+  type    = list(string)
+  default = ["us-west-1", "us-east-1"]
 }
 
 provider "aws" {
+  alias  = "us_west_1"
   region = "us-west-1"
-  alias  = "usw1"
 }
 
 provider "aws" {
+  alias  = "us_east_1"
   region = "us-east-1"
-  alias  = "use1"
 }
 
-resource "aws_instance" "ec2_us_west_1" {
-  provider = aws.usw1
-  // other configuration...
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = "ExampleAppServerInstance"
+module "ec2_instances_us_west_1" {
+  source   = "./modules/ec2_instance"
+  providers = {
+    aws = aws.us_west_1
   }
+  
+  region = "us-west-1"
 }
 
-resource "aws_instance" "ec2_us_east_1" {
-  provider = aws.use1
-  // other configuration...
-  instance_type = "t2.micro"
-
-  tags = {
-    Name = "ExampleAppServerInstance"
+module "ec2_instances_us_east_1" {
+  source   = "./modules/ec2_instance"
+  providers = {
+    aws = aws.us_east_1
   }
+  region = "us-east-1"
 }
+
