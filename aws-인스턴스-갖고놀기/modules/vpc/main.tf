@@ -1,3 +1,11 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 resource "aws_vpc" "vpc" {
   cidr_block = var.cidr_block
 }
@@ -5,7 +13,7 @@ resource "aws_vpc" "vpc" {
 resource "aws_subnet" "subnet" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = cidrsubnet(var.cidr_block, 8, 1)
-  availability_zone       = "${var.region}a"
+  availability_zone       = "${var.region}b"
 }
 
 resource "aws_internet_gateway" "igw" {

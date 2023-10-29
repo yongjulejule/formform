@@ -154,10 +154,5 @@ cdk 는 될거 같은데 쩝... terraform 도 그리 아름답진 않은듯
 - 너무 코드가 더러워지는데? 근본적으로 provider 정의가 너무 겹친다. for_each 공부해야할듯
   - 안된다고 한다! [reference](https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each) ![terraform-for-each-does-not-support-on-provider](image.png) 
   - 오랫동안 이어진 이슈도 있다. https://github.com/hashicorp/terraform/issues/24476
-- 이를 위한 툴이 있다. [terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/quick-start/)
-- 쩝... 써보자.
-
-## terragrunt
-
-- terragrunt 의 경우, terraform 을 래핑해서 사용하는 툴이다.
+- 걍 타협하고 여러번 정의함... 스크립트 짜야할듯
 
