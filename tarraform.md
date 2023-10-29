@@ -154,5 +154,22 @@ cdk 는 될거 같은데 쩝... terraform 도 그리 아름답진 않은듯
 - 너무 코드가 더러워지는데? 근본적으로 provider 정의가 너무 겹친다. for_each 공부해야할듯
   - 안된다고 한다! [reference](https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each) ![terraform-for-each-does-not-support-on-provider](image.png) 
   - 오랫동안 이어진 이슈도 있다. https://github.com/hashicorp/terraform/issues/24476
-- 걍 타협하고 여러번 정의함... 스크립트 짜야할듯
+- 걍 타협하고 여러번 정의함... 스크립트 짜야할듯 -> terragrunt 사용하는걸로~
 
+## Terragrunt
+
+- https://terragrunt.gruntwork.io/docs/getting-started/quick-start/
+- terraform 을 더 편하게 쓰기 위한 wrapper
+- 여기선 aws provider 를 region 에 따라 동적으로 정의하기 위해 사용함
+- terraform command 와 비슷하게 사용 가능 (terraform apply -> terragrunt run-all apply)
+
+
+
+
+## Terraform TMI
+
+### License Issue
+
+- https://www.hashicorp.com/blog/hashicorp-adopts-business-source-license
+- https://www.reddit.com/r/Terraform/comments/15xl0r2/hashicorp_updates_licensing_faq_based_on/
+- https://github.com/opentofu/opentofu
