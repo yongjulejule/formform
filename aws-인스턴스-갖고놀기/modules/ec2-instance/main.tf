@@ -18,15 +18,18 @@ data "aws_ami" "latest_amazon_linux" {
 
 resource "aws_instance" "ec2" {
   ami                         = data.aws_ami.latest_amazon_linux.id
-  instance_type               = "t2.micro"
+  instance_type               = "t3.micro"
   vpc_security_group_ids      = [aws_security_group.sg.id]
   subnet_id                   = var.subnet_id
+
+  tags = {
+    Name = "ec2-instance-from-terraform"
+  }
+
   // ... other configurations
 }
 
 resource "aws_security_group" "sg" {
   vpc_id = var.vpc_id
-
-  // ... other configurations
 }
 
