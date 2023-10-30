@@ -4,6 +4,16 @@ locals {
   controller_regions = ["ap-northeast-2"]
 }
 
+remote_state {
+  backend = "s3"
+  config = {
+    bucket = "playground-bucket-42"
+    key            = "${path_relative_to_include()}/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+  }
+}
+
 generate "worker_provider" {
   path      = "worker_provider.tf"
   if_exists = "overwrite"
