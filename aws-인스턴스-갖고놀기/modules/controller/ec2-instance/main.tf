@@ -40,6 +40,9 @@ resource "aws_instance" "controller" {
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
   key_name               = "controller-key-pair"
+
+  user_data = file("../../../scripts/init-controller.sh")
+
   tags = {
     Name = "controller-from-terraform"
   }

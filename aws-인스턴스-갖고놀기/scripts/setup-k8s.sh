@@ -1,28 +1,16 @@
 #!/usr/bin/env bash
 
-# this script is for Amazon Linux 2023 (may comfortable with RHEL)
-
-PACKAGE_MANAGER=${PACKAGE_MANAGER:-"yum"}
-
-${PACKAGE_MANAGER} update -y
-
-# utility
-${PACKAGE_MANAGER} install -y git htop
-
-## Install oh-my-bash
-curl -o install-omb.sh -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh
-
 # k8s setting
 swapoff -a # for k8s cluster
 
 function setup_containerd {
   ## install containerd
-  ${PACKAGE_MANAGER} install -y containerd
+  yum install -y containerd
   ### change configuration for containerd
-  mkdir -p /etc/containerd
-  containerd config default | tee /etc/containerd/config.toml
-  sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
-  systemctl restart containerd
+  local CONTAINERD_CONFIG_PATH="/etc/containerd/config.toml"
+  echo "version = 2" >>$CONTAINERD_CONFIG_PATH
+
+  systemctl start containerd
 }
 
 function install_kubectl {
@@ -33,7 +21,7 @@ function install_kubectl {
     echo "kubectl shasum does not matched!!!!" && exit 1
   fi
   install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-  ${PACKAGE_MANAGER} install -y bash-completion
+  install bash-completion
   echo 'source /usr/share/bash-completion/bash_completion' >>~/.bashrc && source ~/.bashrc
   echo 'source <(kubectl completion bash)' >>~/.bashrc && source ~/.bashrc
 }
@@ -67,41 +55,6 @@ function install_kubeadm {
   systemctl enable --now kubelet
 }
 
-function some_setups {
-  # some setups for fix 'kubeadm init'
-  # warnings
-  ${PACKAGE_MANAGER} install -y ethtool socat iproute-tc # 뭔지 하나도 모름
-  ${PACKAGE_MANAGER} install -y conntrack iptables       # 이게 왜 없지...?
-
-  modprobe br_netfilter # 여기부터 먼지 몰겟음 ㅋㅋ;;
-  modprobe overlay
-
-  cat <<-EOF | tee /etc/sysctl.d/99-kubernetes-cri.conf
-  net.bridge.bridge-nf-call-iptables = 1
-  net.ipv4.ip_forward = 1
-  net.bridge.bridge-nf-call-ip6tables = 1
-EOF
-
-  # kubelet enable cgroup
-  systemctl daemon-reload
-  systemctl restart kubelet
-}
-
-function create_cluster {
-  # get public ip
-  TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-  IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
-
-  # create cluster
-  kubeadm init                                 # --pod-network-cidr=10.0.0.0/24 --apiserver-advertise-address=$IP
-  export KUBECONFIG=/etc/kubernetes/admin.conf # for root user kubectl
-
-  # Install calico (network plugin) - 먼지 모름; https://docs.projectcalico.org/getting-started/kubernetes/self-managed-onprem/onpremises
-  kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
-}
-
 setup_containerd
 install_kubectl
 install_kubeadm
-
-some_setups
