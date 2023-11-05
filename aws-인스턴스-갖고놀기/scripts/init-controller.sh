@@ -2,6 +2,8 @@
 
 # this script is for Amazon Linux 2023 (may comfortable with RHEL)
 
+hostnamectl set-hostname controller
+
 PACKAGE_MANAGER=${PACKAGE_MANAGER:-"yum"}
 
 ${PACKAGE_MANAGER} update -y
@@ -81,6 +83,7 @@ function some_setups {
   net.ipv4.ip_forward = 1
   net.bridge.bridge-nf-call-ip6tables = 1
 EOF
+  sysctl --system
 
   # kubelet enable cgroup
   systemctl daemon-reload
@@ -93,8 +96,8 @@ function create_cluster {
   IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
 
   # create cluster
-  kubeadm init                                 # --pod-network-cidr=10.0.0.0/24 --apiserver-advertise-address=$IP
-  export KUBECONFIG=/etc/kubernetes/admin.conf # for root user kubectl
+  kubeadm init                                                              # --pod-network-cidr=10.0.0.0/24 --apiserver-advertise-address=$IP
+  echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >>$HOME/.bash_profile # for root user kubectl
 
   # Install calico (network plugin) - 먼지 모름; https://docs.projectcalico.org/getting-started/kubernetes/self-managed-onprem/onpremises
   kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml

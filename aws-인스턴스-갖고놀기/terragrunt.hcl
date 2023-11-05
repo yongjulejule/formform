@@ -1,6 +1,6 @@
 locals {
   # List of regions
-  worker_regions     = ["us-west-1", "us-east-1", "ap-northeast-2"]
+  worker_regions     = ["ap-northeast-2"]
   controller_regions = ["ap-northeast-2"]
 }
 
