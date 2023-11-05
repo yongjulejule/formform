@@ -16,6 +16,42 @@ data "aws_ami" "latest_amazon_linux" {
   }
 }
 
+resource "aws_security_group" "public_sg" {
+  vpc_id = var.vpc_id
+  ingress {
+    description = "Allow all inbound traffic from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    description = "Allow all inbound traffic from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "private_sg" {
+  vpc_id = var.vpc_id
+  ingress {
+    description = "Allow all inbound traffic from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    description = "Allow all inbound traffic from VPC"
+    from_port   = 0
+    to_port     = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+  
 # resource "aws_security_group" "allow_ssh" {
 #   vpc_id = var.vpc_id
 #   ingress {
@@ -49,34 +85,36 @@ data "aws_ami" "latest_amazon_linux" {
 #   }
 # }
 
-resource "aws_security_group" "allow_all" {
-  vpc_id = var.vpc_id
-  ingress {
-    description = "Allow all inbound traffic from VPC"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  egress {
-    description = "Allow all outbound traffic by default"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
+# resource "aws_security_group" "allow_all" {
+#   vpc_id = var.vpc_id
+#   ingress {
+#     description = "Allow all inbound traffic from VPC"
+#     from_port   = 0
+#     to_port     = 65535
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+#   egress {
+#     description = "Allow all outbound traffic by default"
+#     from_port   = 0
+#     to_port     = 65535
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
 
 
 resource "aws_instance" "controller" {
   ami                    = data.aws_ami.latest_amazon_linux.id
   instance_type          = "t3.medium"
-  subnet_id              = var.subnet_id
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
+  subnet_id              = var.public_subnet_id
+  # vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
+  vpc_security_group_ids = [aws_security_group.public_sg.id]
   key_name               = "controller-key-pair"
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
-  user_data = file("${path.module}/../scripts/init-controller.sh")
+
+  #user_data = file("${path.module}/../scripts/init-controller.sh")
 
   tags = {
     Name = "controller-from-terraform"
@@ -125,11 +163,13 @@ data "local_file" "controller_key_pair" {
 resource "aws_instance" "node" {
   ami                    = data.aws_ami.latest_amazon_linux.id
   instance_type          = "t3.small"
-  subnet_id              = var.subnet_egress_id
-  vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
+  subnet_id              = var.private_subnet_id
+  # vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
+  vpc_security_group_ids = [aws_security_group.private_sg.id]
   key_name               = "controller-key-pair"
   count                  = 2
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  associate_public_ip_address = true
 
   depends_on = [ null_resource.controller_provisioner ]
 

@@ -12,12 +12,12 @@ variable "vpc_cidr" {
   description = "The VPC CIDR block"
 }
 
-variable "subnet_id" {
+variable "public_subnet_id" {
   type        = string
   description = "The subnet ID to launch the EC2 instance in"
 }
 
-variable "subnet_egress_id" {
+variable "private_subnet_id" {
   type        = string
   description = "The subnet ID to launch the EC2 instance in for egress"
 }
