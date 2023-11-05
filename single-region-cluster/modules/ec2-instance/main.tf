@@ -16,19 +16,48 @@ data "aws_ami" "latest_amazon_linux" {
   }
 }
 
-resource "aws_security_group" "allow_ssh" {
+# resource "aws_security_group" "allow_ssh" {
+#   vpc_id = var.vpc_id
+#   ingress {
+#     description = "SSH from VPC"
+#     from_port   = 22
+#     to_port     = 22
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+
+# resource "aws_security_group" "allow_outbound" {
+#   vpc_id = var.vpc_id
+#   egress {
+#     description = "Allow all outbound traffic by default"
+#     from_port   = 0
+#     to_port     = 65535
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+# }
+
+# resource "aws_security_group" "allow_inboud_from_vpc" {
+#   vpc_id = var.vpc_id
+#   ingress {
+#     description = "Allow all inbound traffic from VPC"
+#     from_port   = 0
+#     to_port     = 65535
+#     protocol    = "tcp"
+#     cidr_blocks = [var.vpc_cidr]
+#   }
+# }
+
+resource "aws_security_group" "allow_all" {
   vpc_id = var.vpc_id
   ingress {
-    description = "SSH from VPC"
-    from_port   = 22
-    to_port     = 22
+    description = "Allow all inbound traffic from VPC"
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-resource "aws_security_group" "allow_outbound" {
-  vpc_id = var.vpc_id
   egress {
     description = "Allow all outbound traffic by default"
     from_port   = 0
@@ -37,18 +66,6 @@ resource "aws_security_group" "allow_outbound" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-resource "aws_security_group" "allow_inboud_from_vpc" {
-  vpc_id = var.vpc_id
-  ingress {
-    description = "Allow all inbound traffic from VPC"
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = [var.vpc_cidr]
-  }
-}
-
 
 
 resource "aws_instance" "controller" {
@@ -66,6 +83,41 @@ resource "aws_instance" "controller" {
   }
 }
 
+resource "null_resource" "controller_provisioner" {
+  depends_on = [ aws_instance.controller ]
+  
+  provisioner "local-exec" {
+    command = "echo ${aws_instance.controller.public_ip} > ../controller_ip.txt"
+  }
+  provisioner "file" {
+      source      = "${path.module}/../scripts/init-controller.sh"
+      destination = "/tmp/init-controller.sh"
+      connection {
+        host = aws_eip.controller_eip.public_ip
+        type = "ssh"
+        user = "ec2-user"
+        private_key = data.local_file.controller_key_pair.content
+      }
+  }
+  
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /tmp/init-controller.sh",
+      "sudo /tmp/init-controller.sh",
+      "mkdir -p $HOME/.kube",
+      "sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config",
+      "sudo chown $(id -u):$(id -g) $HOME/.kube/config",
+      "kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml",
+     ]
+     connection {
+      host = aws_eip.controller_eip.public_ip
+      type = "ssh"
+      user = "ec2-user"
+      private_key = data.local_file.controller_key_pair.content
+     }
+  }
+}
+
 data "local_file" "controller_key_pair" {
     filename = pathexpand("~/.ssh/controller-key-pair")
 }
@@ -73,13 +125,13 @@ data "local_file" "controller_key_pair" {
 resource "aws_instance" "node" {
   ami                    = data.aws_ami.latest_amazon_linux.id
   instance_type          = "t3.small"
-  subnet_id              = var.subnet_id
+  subnet_id              = var.subnet_egress_id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
   key_name               = "controller-key-pair"
   count                  = 2
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
-  
-  depends_on = [ aws_instance.controller ]
+
+  depends_on = [ null_resource.controller_provisioner ]
 
   user_data = file("${path.module}/../scripts/init-worker.sh")
 

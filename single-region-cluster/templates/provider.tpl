@@ -16,7 +16,9 @@ ${join("\n\n", [for region in regions : <<-CONTENTS
    source    = "./modules/ec2-instance"
    vpc_id    = module.vpc_${region}.vpc_id
    subnet_id = module.vpc_${region}.subnet_id
+   subnet_egress_id = module.vpc_${region}.subnet_egress_id
    vpc_cidr  = module.vpc_${region}.vpc_cidr
+
    providers = {
      aws = aws.${region}
    }

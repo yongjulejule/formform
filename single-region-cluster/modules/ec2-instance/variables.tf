@@ -17,3 +17,8 @@ variable "subnet_id" {
   description = "The subnet ID to launch the EC2 instance in"
 }
 
+variable "subnet_egress_id" {
+  type        = string
+  description = "The subnet ID to launch the EC2 instance in for egress"
+}
+

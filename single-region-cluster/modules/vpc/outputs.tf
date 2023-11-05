@@ -9,3 +9,7 @@ output "subnet_id" {
 output "vpc_cidr" {
   value = aws_vpc.vpc.cidr_block
 }
+
+output "subnet_egress_id" {
+  value = aws_subnet.egress_subnet.id
+}

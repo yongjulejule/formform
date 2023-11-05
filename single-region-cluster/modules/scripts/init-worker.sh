@@ -11,9 +11,6 @@ ${PACKAGE_MANAGER} update -y
 # utility
 ${PACKAGE_MANAGER} install -y git htop
 
-## Install oh-my-bash
-curl -o install-omb.sh -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh
-
 # k8s setting
 swapoff -a # for k8s cluster
 
@@ -24,7 +21,8 @@ function setup_containerd {
   mkdir -p /etc/containerd
   containerd config default | tee /etc/containerd/config.toml
   sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
-  systemctl restart containerd
+  systemctl start containerd
+  systemctl enable --now containerd
 }
 
 function install_kubectl {
