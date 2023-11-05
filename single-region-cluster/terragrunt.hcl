@@ -1,6 +1,6 @@
 locals {
   # List of regions
-  region = ["${get_env("SINGLE_CLUSTER_AWS_REGION")}"]
+  regions = ["${get_env("SINGLE_CLUSTER_AWS_REGION")}"]
 }
 
 remote_state {
@@ -16,7 +16,7 @@ remote_state {
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite"
-  contents  = templatefile("templates/provider.tpl", { regions = local.worker_regions })
+  contents  = templatefile("templates/provider.tpl", { regions = local.regions })
 }
 
 terraform {

@@ -49,6 +49,8 @@ resource "aws_security_group" "allow_inboud_from_vpc" {
   }
 }
 
+
+
 resource "aws_instance" "controller" {
   ami                    = data.aws_ami.latest_amazon_linux.id
   instance_type          = "t3.medium"
@@ -57,11 +59,15 @@ resource "aws_instance" "controller" {
   key_name               = "controller-key-pair"
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
-  user_data = file("../../scripts/init-controller.sh")
+  user_data = file("${path.module}/../scripts/init-controller.sh")
 
   tags = {
     Name = "controller-from-terraform"
   }
+}
+
+data "local_file" "controller_key_pair" {
+    filename = pathexpand("~/.ssh/controller-key-pair")
 }
 
 resource "null_resource" "init_cluster" { 
@@ -72,9 +78,9 @@ resource "null_resource" "init_cluster" {
     ]
     connection {
       type        = "ssh"
-      host        = aws_instance.control_plane.public_ip
+      host        = aws_instance.controller.public_ip
       user        = "ec2-user"
-      private_key = file("~/.ssh/controller_key_pair")
+      private_key = data.local_file.controller_key_pair.content
     }
 
   }
@@ -91,7 +97,7 @@ resource "aws_instance" "node" {
   
   depends_on = [ null_resource.init_cluster ]
 
-  user_data = file("../../scripts/init-worker.sh")
+  user_data = file("${path.module}/../scripts/init-worker.sh")
 
   tags = {
     Name = "node-from-terraform"
