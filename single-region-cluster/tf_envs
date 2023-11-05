@@ -1,0 +1,2 @@
+# "source tf_envs"
+export SINGLE_CLUSTER_AWS_REGION='ap-northeast-2'
