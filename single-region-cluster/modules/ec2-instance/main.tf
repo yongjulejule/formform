@@ -70,22 +70,6 @@ data "local_file" "controller_key_pair" {
     filename = pathexpand("~/.ssh/controller-key-pair")
 }
 
-resource "null_resource" "init_cluster" { 
-  depends_on = [aws_instance.controller]
-  provisioner "remote-exec" {
-    inline = [
-      "sudo kubeadm token create --print-join-command | aws ssm put-parameter --name /k8s/join-command --type SecureString --value fileb:///dev/stdin"
-    ]
-    connection {
-      type        = "ssh"
-      host        = aws_instance.controller.public_ip
-      user        = "ec2-user"
-      private_key = data.local_file.controller_key_pair.content
-    }
-
-  }
-}
-
 resource "aws_instance" "node" {
   ami                    = data.aws_ami.latest_amazon_linux.id
   instance_type          = "t3.small"
@@ -95,7 +79,7 @@ resource "aws_instance" "node" {
   count                  = 2
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   
-  depends_on = [ null_resource.init_cluster ]
+  depends_on = [ aws_instance.controller ]
 
   user_data = file("${path.module}/../scripts/init-worker.sh")
 

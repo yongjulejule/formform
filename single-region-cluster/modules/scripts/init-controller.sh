@@ -24,7 +24,8 @@ function setup_containerd {
   mkdir -p /etc/containerd
   containerd config default | tee /etc/containerd/config.toml
   sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
-  systemctl restart containerd
+  systemctl start containerd
+  systemctl enable --now containerd
 }
 
 function install_kubectl {
@@ -96,11 +97,13 @@ function create_cluster {
   IP=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-ipv4)
 
   # create cluster
-  kubeadm init                                                              # --pod-network-cidr=10.0.0.0/24 --apiserver-advertise-address=$IP
-  echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >>$HOME/.bash_profile # for root user kubectl
+  kubeadm init                                                        # --pod-network-cidr=10.0.0.0/24 --apiserver-advertise-address=$IP
+  echo 'export KUBECONFIG=/etc/kubernetes/admin.conf' >>$HOME/.bashrc # for root user kubectl
 
   # Install calico (network plugin) - 먼지 모름; https://docs.projectcalico.org/getting-started/kubernetes/self-managed-onprem/onpremises
   kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/calico.yaml
+  aws ssm put-parameter --name /k8s/join-command --type SecureString --value "$(kubeadm token create --print-join-command)" --overwrite
+
 }
 
 setup_containerd

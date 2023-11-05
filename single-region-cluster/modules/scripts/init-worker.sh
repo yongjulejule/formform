@@ -91,7 +91,7 @@ EOF
 }
 
 function join_cluster {
-  aws secretsmanager get-secret-value --secret-id k8s-join-command --query SecretString --output text | sudo sh
+  aws ssm get-parameter --name /k8s/join-command --with-decryption | jq ".Parameter.Value" | sudo sh
 }
 
 setup_containerd
