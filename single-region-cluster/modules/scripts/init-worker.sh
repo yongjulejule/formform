@@ -89,7 +89,7 @@ EOF
 }
 
 function join_cluster {
-  aws ssm get-parameter --name /k8s/join-command --with-decryption | jq ".Parameter.Value" | sudo sh
+  aws ssm get-parameter --name /k8s/join-command --with-decryption | jq -r ".Parameter.Value" | sudo sh
 }
 
 setup_containerd
