@@ -44,7 +44,7 @@ resource "aws_security_group" "allow_inboud_from_vpc" {
     description = "Allow all inbound traffic from VPC"
     from_port   = 0
     to_port     = 65535
-    protocol    = "traffic"
+    protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
   }
 }
