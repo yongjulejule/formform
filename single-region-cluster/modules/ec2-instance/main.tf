@@ -55,6 +55,7 @@ resource "aws_instance" "controller" {
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
   key_name               = "controller-key-pair"
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
   user_data = file("../../scripts/init-controller.sh")
 
@@ -86,10 +87,11 @@ resource "aws_instance" "node" {
   vpc_security_group_ids = [aws_security_group.allow_ssh.id, aws_security_group.allow_outbound.id, aws_security_group.allow_inboud_from_vpc.id]
   key_name               = "controller-key-pair"
   count                  = 2
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   
   depends_on = [ null_resource.init_cluster ]
 
-  user_data = file("../../scripts/init-controller.sh")
+  user_data = file("../../scripts/init-worker.sh")
 
   tags = {
     Name = "node-from-terraform"
@@ -100,5 +102,53 @@ resource "aws_eip" "controller_eip" {
   instance = aws_instance.controller.id
 }
 
+# IAM
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2_role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
 
+resource "aws_iam_policy" "parameter_store_access" {
+  name        = "ParameterStoreAccess"
+  description = "Allows access to Parameter Store"
+  policy      = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:PutParameter",
+        "ssm:GetParameter",
+        "ssm:DescribeParameters"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+}
 
+resource "aws_iam_role_policy_attachment" "parameter_store_access_attachment" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = aws_iam_policy.parameter_store_access.arn
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "ec2_profile"
+  role = aws_iam_role.ec2_role.name
+}

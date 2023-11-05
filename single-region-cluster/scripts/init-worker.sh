@@ -90,7 +90,7 @@ EOF
   systemctl restart kubelet
 }
 
-function create_cluster {
+function join_cluster {
   aws secretsmanager get-secret-value --secret-id k8s-join-command --query SecretString --output text | sudo sh
 }
 
@@ -99,3 +99,4 @@ install_kubectl
 install_kubeadm
 
 some_setups
+join_cluster
